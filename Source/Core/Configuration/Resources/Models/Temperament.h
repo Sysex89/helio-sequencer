@@ -108,6 +108,8 @@ public:
 
 private:
 
+    Note::Key getEquivalentOfMajorSixth() const noexcept;
+
     String id;
     String name;
     Period period;

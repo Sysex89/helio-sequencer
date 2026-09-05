@@ -35,6 +35,14 @@
         "period": "C Dbb C# Db C## D Ebb D# Eb D## E Fb E# F Gbb F# Gb F## G Abb G# Ab G## A Bbb A# Bb A## B Cb B#",
         "highlighting": "2 3 3 2 3 2 3 2 3 3 2 3",
         "chromaticMap": "2 3 3 2 3 2 3 2 3 3 2 3"
+      },
+      {
+        "id": "13edt",
+        "name": "Bohlen-Pierce temperament",
+        "period": "C C#/Db D E F F#/Gb G H H#/Jb J A A#/Bb B",
+        "periodRange": 3.0,
+        "highlighting": "2 1 1 2 1 2 1 2 1",
+        "chromaticMap": "1 1 1 1 1 2 1 1 1 1 1 1"
       }
     ]
   }

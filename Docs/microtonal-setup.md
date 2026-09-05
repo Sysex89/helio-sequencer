@@ -96,9 +96,9 @@ All tools that work with scales will only show scales with octave size matching 
 
 ### Limitations
 
-The built-in temperaments [list](configs.md#temperaments) includes 12-edo, 19-edo, 22-edo, 26-edo, and 31-edo.
+The built-in temperaments [list](configs.md#temperaments) includes 12-edo, 19-edo, 22-edo, 26-edo, 31-edo, and the Bohlen-Pierce temperament, which is a non-octave tuning: 13 equal steps in the tritave (3/1).
 
-The built-in scales [list](configs.md#scales) only includes 7-tone scales for each of those temperaments because several parts of the app, such as the chord tool and the arpeggiator tool, still assume working with diatonic scales. Given that limitation, using these tools with any built-in temperament or scale makes sense.
+The built-in scales [list](configs.md#scales) only includes 7-tone scales for each of those temperaments because several parts of the app, such as the chord tool and the arpeggiator tool, still assume working with diatonic scales. Given that limitation, using these tools with any built-in temperament or scale makes sense. The exception is the Bohlen-Pierce temperament, which comes with the 9-tone Lambda scale and its modes: the chord and arpeggiator tools will still work with them, just keep in mind that they were designed for 7-tone scales.
 
 ### Adding a custom temperament
 

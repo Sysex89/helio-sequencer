@@ -5500,7 +5500,21 @@ static const unsigned char temp_binary_data_120[] =
 "      { \"period\": 31, \"name\": \"Septimal Natural Minor\", \"intervals\": \"5 2 6 5 2 5 6\" },\n"
 "      { \"period\": 31, \"name\": \"Subminor Altered\", \"intervals\": \"2 5 3 5 5 5 6\" },\n"
 "      { \"period\": 31, \"name\": \"Tropical Major\", \"intervals\": \"5 7 1 5 7 5 1\" },\n"
-"      { \"period\": 31, \"name\": \"Turkish Major\", \"intervals\": \"5 5 3 5 4 5 4\" }\n"
+"      { \"period\": 31, \"name\": \"Turkish Major\", \"intervals\": \"5 5 3 5 4 5 4\" },\n"
+"\n"
+"      // Bohlen-Pierce (13 edt) scales: the nine modes of the 9-tone Lambda scale,\n"
+"      // named after Heinz Bohlen where the names are known, otherwise using\n"
+"      // the ups|downs notation for the number of generators (9/7) up and down;\n"
+"      // sources: https://www.huygens-fokker.org/bpsite/modes.html, https://xen.wiki/w/4L_5s\n"
+"      { \"period\": 13, \"name\": \"Lambda\", \"intervals\": \"2 1 1 2 1 2 1 2 1\" },\n"
+"      { \"period\": 13, \"name\": \"Harmonic\", \"intervals\": \"1 2 1 2 1 2 1 1 2\" },\n"
+"      { \"period\": 13, \"name\": \"Dur I\", \"intervals\": \"1 2 1 2 1 1 2 1 2\" },\n"
+"      { \"period\": 13, \"name\": \"Lambda 8|0\", \"intervals\": \"2 1 2 1 2 1 2 1 1\" },\n"
+"      { \"period\": 13, \"name\": \"Lambda 7|1\", \"intervals\": \"2 1 2 1 2 1 1 2 1\" },\n"
+"      { \"period\": 13, \"name\": \"Lambda 6|2\", \"intervals\": \"2 1 2 1 1 2 1 2 1\" },\n"
+"      { \"period\": 13, \"name\": \"Lambda 4|4\", \"intervals\": \"1 2 1 2 1 2 1 2 1\" },\n"
+"      { \"period\": 13, \"name\": \"Lambda 1|7\", \"intervals\": \"1 2 1 1 2 1 2 1 2\" },\n"
+"      { \"period\": 13, \"name\": \"Lambda 0|8\", \"intervals\": \"1 1 2 1 2 1 2 1 2\" }\n"
 "    ]\n"
 "  }\n"
 "}";
@@ -5546,6 +5560,14 @@ static const unsigned char temp_binary_data_121[] =
 "        \"period\": \"C Dbb C# Db C## D Ebb D# Eb D## E Fb E# F Gbb F# Gb F## G Abb G# Ab G## A Bbb A# Bb A## B Cb B#\",\n"
 "        \"highlighting\": \"2 3 3 2 3 2 3 2 3 3 2 3\",\n"
 "        \"chromaticMap\": \"2 3 3 2 3 2 3 2 3 3 2 3\"\n"
+"      },\n"
+"      {\n"
+"        \"id\": \"13edt\",\n"
+"        \"name\": \"Bohlen-Pierce temperament\",\n"
+"        \"period\": \"C C#/Db D E F F#/Gb G H H#/Jb J A A#/Bb B\",\n"
+"        \"periodRange\": 3.0,\n"
+"        \"highlighting\": \"2 1 1 2 1 2 1 2 1\",\n"
+"        \"chromaticMap\": \"1 1 1 1 1 2 1 1 1 1 1 1\"\n"
 "      }\n"
 "    ]\n"
 "  }\n"
@@ -5708,8 +5730,8 @@ const char* getNamedResource (const char* resourceNameUTF8, int& numBytes)
         case 0x25669f2b:  numBytes = 26328; return hotkeySchemes_json;
         case 0xfd7446db:  numBytes = 792; return keyboardMappings_json;
         case 0x496315fd:  numBytes = 933; return meters_json;
-        case 0x048f5efe:  numBytes = 13262; return scales_json;
-        case 0x77719112:  numBytes = 1448; return temperaments_json;
+        case 0x048f5efe:  numBytes = 14305; return scales_json;
+        case 0x77719112:  numBytes = 1719; return temperaments_json;
         case 0xf8655f25:  numBytes = 664; return translations_json;
         default: break;
     }
