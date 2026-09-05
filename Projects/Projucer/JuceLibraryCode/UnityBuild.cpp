@@ -12,6 +12,8 @@
 #include "../../Source/Core/Audio/BuiltIn/MetronomeSynthAudioPlugin.cpp"
 #include "../../Source/Core/Audio/BuiltIn/MetronomeSynth.cpp"
 #include "../../Source/Core/Audio/BuiltIn/SoundFontSynthAudioPlugin.cpp"
+#include "../../Source/Core/Audio/BuiltIn/VL/VLSynth.cpp"
+#include "../../Source/Core/Audio/BuiltIn/VL/VLSynthAudioPlugin.cpp"
 #include "../../Source/Core/Audio/Instruments/Instrument.cpp"
 #include "../../Source/Core/Audio/Instruments/OrchestraPit.cpp"
 #include "../../Source/Core/Audio/Instruments/PluginScanner.cpp"

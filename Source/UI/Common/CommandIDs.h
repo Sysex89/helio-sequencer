@@ -315,6 +315,8 @@ namespace CommandIDs
         ScriptEditorFindNext            = 0x4766,
         ScriptEditorFindPrevious        = 0x4767,
 
+        SelectBreathMode                = 0x4780, // more ids reserved for sub-items
+
         YourNextCommandId               = 0x4800
     };
 

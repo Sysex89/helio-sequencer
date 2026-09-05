@@ -20,6 +20,7 @@
 #include "DefaultSynthAudioPlugin.h"
 #include "MetronomeSynthAudioPlugin.h"
 #include "SoundFontSynthAudioPlugin.h"
+#include "VLSynthAudioPlugin.h"
 
 const String BuiltInSynthsPluginFormat::formatName = "BuiltIn";
 const String BuiltInSynthsPluginFormat::formatIdentifier = "BuiltIn";
@@ -34,6 +35,9 @@ BuiltInSynthsPluginFormat::BuiltInSynthsPluginFormat()
 
     SoundFontSynthAudioPlugin soundFontSynthAudioPlugin;
     soundFontSynthAudioPlugin.fillInPluginDescription(this->soundFontPlayerInstrument);
+
+    VLSynthAudioPlugin vlSynthAudioPlugin;
+    vlSynthAudioPlugin.fillInPluginDescription(this->vlSynthInstrument);
 }
 
 String BuiltInSynthsPluginFormat::getName() const
@@ -54,6 +58,10 @@ void BuiltInSynthsPluginFormat::findAllTypesForFile(OwnedArray<PluginDescription
     else if (id == SoundFontSynthAudioPlugin::instrumentId)
     {
         description.add(new PluginDescription(this->soundFontPlayerInstrument));
+    }
+    else if (id == VLSynthAudioPlugin::instrumentId)
+    {
+        description.add(new PluginDescription(this->vlSynthInstrument));
     }
 }
 
@@ -81,6 +89,12 @@ void BuiltInSynthsPluginFormat::createPluginInstance(const PluginDescription &de
     if (desc.name == this->soundFontPlayerInstrument.name)
     {
         callback(make<SoundFontSynthAudioPlugin>(), {});
+        return;
+    }
+
+    if (desc.name == this->vlSynthInstrument.name)
+    {
+        callback(make<VLSynthAudioPlugin>(), {});
         return;
     }
 

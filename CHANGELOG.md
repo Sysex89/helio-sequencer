@@ -4,6 +4,9 @@ Helio features and updates
 All notable changes to this project will be documented in this file.
 For more detailed info, please see the git log.
 
+## Version 3.18
+ - Added a built-in monophonic physical-modelling wind instrument ("Helio Wind"), driven by note velocity or by breath control (CC 2) automation, working in all built-in temperaments
+
 ## Version 3.17
  - Removed update checks and project sync features from desktop builds, the app is now offline on both desktop and mobile platforms
  - Added initial support for keyboard-only editing in the sequencer, more hotkeys for menus, pop-ups, and dialogs

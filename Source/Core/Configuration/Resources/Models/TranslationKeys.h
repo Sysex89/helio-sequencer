@@ -329,6 +329,8 @@ namespace I18n
         static constexpr auto metronomeTitle = constexprHash("instruments::metronome::title");
         static constexpr auto metronomeBuiltInSoundPlaceholder = constexprHash("instruments::metronome::builtin");
         static constexpr auto soundFontSynthTitle = constexprHash("instruments::soundfont::title");
+        static constexpr auto vlSynthTitle = constexprHash("instruments::vlsynth::title");
+        static constexpr auto vlSynthBreathMode = constexprHash("instruments::vlsynth::breathmode");
     }
 
     namespace VCS

@@ -234,6 +234,14 @@ namespace Serialization
             static const Identifier filePath = "filePath";
             static const Identifier programIndex = "programIndex";
         } // namespace SoundFont
+
+        namespace VL
+        {
+            static const Identifier vlConfig = "vlSynth";
+            static const Identifier version = "version";
+            static const Identifier programIndex = "programIndex";
+            static const Identifier breathMode = "breathMode";
+        } // namespace VL
     } // namespace Audio
 
     namespace Config
