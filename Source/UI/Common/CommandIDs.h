@@ -316,8 +316,16 @@ namespace CommandIDs
         ScriptEditorFindPrevious        = 0x4767,
 
         SelectBreathMode                = 0x4780, // more ids reserved for sub-items
+        SelectVLDriver                  = 0x4790, // more ids reserved for sub-items
+        SelectVLResonator               = 0x47a0, // more ids reserved for sub-items
+        SelectVLController              = 0x47b0, // more ids reserved for sub-items
+        SelectVLModifier                = 0x47d0, // more ids reserved for sub-items
+        VLSavePreset                    = 0x47e0,
+        VLLoadPreset                    = 0x47e1,
+        VLToggleModifier                = 0x47e2,
+        SelectVLControllerSource        = 0x4800, // more ids reserved for sub-items
 
-        YourNextCommandId               = 0x4800
+        YourNextCommandId               = 0x4900
     };
 
     CommandIDs::Id getIdForName(const String &command);

@@ -132,6 +132,7 @@ void VLSynth::applyParameters(const Parameters &newParameters)
     if (presetChanged)
     {
         this->instrument.setPreset(this->parameters.preset);
+        this->modifiers.setPreset(this->parameters.preset);
         this->tunerCorrection = 0.0;
         this->updateCoefficients();
     }
@@ -173,6 +174,8 @@ void VLSynth::prepareToPlay(double newSampleRate)
     this->sampleRate = jmax(8000.0, newSampleRate);
     this->instrument.prepare(this->sampleRate);
     this->instrument.setPreset(this->parameters.preset);
+    this->modifiers.prepare(this->sampleRate);
+    this->modifiers.setPreset(this->parameters.preset);
     this->updateCoefficients();
     this->reset();
 }
@@ -229,6 +232,7 @@ void VLSynth::reset()
 void VLSynth::resetResonator()
 {
     this->instrument.reset();
+    this->modifiers.reset();
 
     zeromem(this->history, sizeof(this->history));
     this->historyWriteIndex = 0;
@@ -258,6 +262,11 @@ double VLSynth::getTunerCorrection() const noexcept
 float VLSynth::getControllerValue(VL::ControllerId id) const noexcept
 {
     return this->controllerValues[int(id)];
+}
+
+double VLSynth::getTailLengthSeconds() const noexcept
+{
+    return this->modifiers.getTailLengthSeconds();
 }
 
 //===----------------------------------------------------------------------===//
@@ -304,6 +313,13 @@ void VLSynth::renderNextBlock(AudioBuffer<float> &buffer,
     {
         this->renderSamples(left + renderedSamples,
             right != nullptr ? right + renderedSamples : nullptr, numSamples - renderedSamples);
+    }
+
+    // the effects run over the whole range, voice or no voice, so
+    // that their tails ring out after the note
+    if (this->modifiers.hasEffects())
+    {
+        this->modifiers.processEffects(left, right, numSamples);
     }
 }
 
@@ -819,8 +835,14 @@ float VLSynth::tick()
     this->history[this->historyWriteIndex] = instrumentOutput;
     this->historyWriteIndex = (this->historyWriteIndex + 1) % VLSynth::historyLength;
 
-    // output trim, amplitude, and a soft limiter as the last line of defence
-    const auto output = std::tanh(instrumentOutput * preset.outputGain * this->amplitude);
+    // the modifier section, then output trim, amplitude, and a soft
+    // limiter as the last line of defence
+    const auto modified = this->modifiers.processSample(instrumentOutput,
+        this->controllerValues[int(VL::ControllerId::DynamicFilter)],
+        this->controllerValues[int(VL::ControllerId::HarmonicEnhancer)],
+        this->currentFrequency);
+
+    const auto output = std::tanh(modified * preset.outputGain * this->amplitude);
     this->outputEnvelope = jmax(std::abs(output), this->outputEnvelope * 0.9999f);
     this->lastOutput = output;
     return output;
@@ -868,6 +890,7 @@ void VLSynth::renderSamples(float *left, float *right, int numSamples)
 #include "Config.h"
 #include "TemperamentsCollection.h"
 #include "JsonSerializer.h"
+#include "VLSynthAudioPlugin.h"
 
 class VLSynthTests final : public UnitTest
 {
@@ -1332,6 +1355,71 @@ public:
                 "Out of range program index must be clamped");
         }
 
+        beginTest("Modifiers and effects");
+        {
+            // everything on: still finite, still in tune, and the block
+            // size still doesn't matter
+            auto preset = presets[0];
+            preset.modifiers.harmonicEnhancer.enabled = true;
+            preset.modifiers.dynamicFilter.enabled = true;
+            preset.modifiers.equalizer.enabled = true;
+            preset.modifiers.equalizer.bands[2].gain = 6.f;
+            preset.modifiers.impulseExpander.enabled = true;
+            preset.modifiers.resonatorBank.enabled = true;
+            preset.effects.chorus.enabled = true;
+            preset.effects.reverb.enabled = true;
+            preset.withController(VL::ControllerId::DynamicFilter, VL::Source::firstCC + 2, 1.f, 0.2f);
+            preset.withController(VL::ControllerId::HarmonicEnhancer, VL::Source::firstCC + 2, 1.f, 0.f);
+
+            const int length = int(sampleRate * 0.6);
+            const Array<Event> events = {
+                controller(0, 1, 2, 100),
+                noteOn(0, 60, 0.8f, twelveTone),
+                noteOff(int(sampleRate * 0.4), 60, twelveTone) };
+
+            VLSynth small;
+            VLSynth large;
+            small.applyParameters(VLSynth::Parameters().withPreset(preset));
+            large.applyParameters(VLSynth::Parameters().withPreset(preset));
+            const auto a = render(small, sampleRate, 64, events, length);
+            const auto b = render(large, sampleRate, 512, events, length);
+
+            bool finite = true;
+            float peak = 0.f;
+            float maxDifference = 0.f;
+            for (int i = 0; i < length; ++i)
+            {
+                finite = finite && std::isfinite(a[i]);
+                peak = jmax(peak, std::abs(a[i]));
+                maxDifference = jmax(maxDifference, std::abs(a[i] - b[i]));
+            }
+
+            expect(finite, "All modifiers on: non-finite output");
+            expect(peak <= 1.5f, "All modifiers on: peak " + String(peak, 3));
+            expect(maxDifference < 0.0001f, "All modifiers on: block size difference " + String(maxDifference, 6));
+
+            const auto measured = measureFrequency(a, int(sampleRate * 0.3), int(sampleRate * 0.4), sampleRate);
+            const auto error = cents(measured, twelveTone->getNoteInHertz(60.0));
+            expect(std::abs(error) <= 5.0, "All modifiers on: pitch error " + String(error, 2) + " cents");
+
+            // the reverb tail is there after the note-off, and decays
+            const auto tailEarly = rms(a, int(sampleRate * 0.45), int(sampleRate * 0.5));
+            const auto tailLate = rms(a, int(sampleRate * 0.55), int(sampleRate * 0.6));
+            expect(tailEarly > 0.0001, "Reverb tail must be audible after the note, level " + String(tailEarly, 6));
+            expect(tailLate < tailEarly, "Reverb tail must decay");
+
+            // the plugin reports the tail
+            VLSynthAudioPlugin plugin;
+            plugin.applySynthParameters(VLSynth::Parameters().withPreset(preset));
+            expect(plugin.getTailLengthSeconds() >= 3.0, "Tail length must include the reverb");
+
+            // the modifier state survives serialization
+            VL::Preset restored;
+            restored.deserialize(preset.serialize());
+            expect(restored == preset, "Modifiers and effects must survive serialization");
+            expect(restored.modifiers.equalizer.bands[2].gain == 6.f);
+        }
+
         beginTest("Controllers are global across channels");
         {
             VLSynth synth;
@@ -1404,15 +1492,32 @@ public:
         beginTest("Benchmark");
         {
             for (const auto programIndex : { 0, VL::findFactoryPreset("Trumpet"),
-                VL::findFactoryPreset("Flute"), VL::findFactoryPreset("Cello") })
+                VL::findFactoryPreset("Flute"), VL::findFactoryPreset("Cello"), -1 })
             {
                 VLSynth synth;
-                synth.applyParameters(program(programIndex));
+                if (programIndex >= 0)
+                {
+                    synth.applyParameters(program(programIndex));
+                }
+                else
+                {
+                    auto everything = presets[0];
+                    everything.name = "Everything on";
+                    everything.modifiers.harmonicEnhancer.enabled = true;
+                    everything.modifiers.dynamicFilter.enabled = true;
+                    everything.modifiers.equalizer.enabled = true;
+                    everything.modifiers.impulseExpander.enabled = true;
+                    everything.modifiers.resonatorBank.enabled = true;
+                    everything.effects.chorus.enabled = true;
+                    everything.effects.reverb.enabled = true;
+                    synth.applyParameters(VLSynth::Parameters().withPreset(everything));
+                }
+
                 const int length = int(sampleRate);
                 const auto start = Time::getMillisecondCounterHiRes();
                 const auto out = render(synth, sampleRate, 512, { noteOn(0, 60, 0.8f, twelveTone) }, length);
                 const auto elapsed = Time::getMillisecondCounterHiRes() - start;
-                logMessage(presets[programIndex].name + ": rendered 1 second at 48 kHz in " +
+                logMessage(synth.getPreset().name + ": rendered 1 second at 48 kHz in " +
                     String(elapsed, 2) + " ms, " + String(elapsed / 10.0, 2) + "% of real time");
                 expect(out.size() == length);
             }

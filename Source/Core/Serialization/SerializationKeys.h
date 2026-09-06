@@ -297,6 +297,11 @@ namespace Serialization
             static const Identifier rate = "rate";
             static const Identifier band = "band";
             static const Identifier comb = "comb";
+            static const Identifier q = "q";
+            static const Identifier roomSize = "roomSize";
+            static const Identifier damping = "damping";
+            static const Identifier ratio = "ratio";
+            static const Identifier trackPitch = "trackPitch";
         } // namespace Wind
     } // namespace Audio
 
@@ -351,6 +356,7 @@ namespace Serialization
 
         static const Identifier lastRenderPath = "lastRenderPath";
         static const Identifier lastSoundFontsPath = "lastSoundFontsPath";
+        static const Identifier lastWindPresetsPath = "lastWindPresetsPath";
 
         namespace Flags
         {

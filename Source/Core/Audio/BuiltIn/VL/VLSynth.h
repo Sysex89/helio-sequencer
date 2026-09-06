@@ -20,6 +20,7 @@
 #include "Temperament.h"
 #include "VLPreset.h"
 #include "VLInstrument.h"
+#include "VLModifiers.h"
 
 //===----------------------------------------------------------------------===//
 // A monophonic, breath-controlled physical modelling synth, modelled on the
@@ -98,6 +99,9 @@ public:
     // the current value of a controller, 0..1, for the editor
     float getControllerValue(VL::ControllerId id) const noexcept;
 
+    // the effects' tail, which outlives the voice
+    double getTailLengthSeconds() const noexcept;
+
     static constexpr auto portamentoTimeController = 5;
     static constexpr auto portamentoSwitchController = 65;
 
@@ -136,6 +140,7 @@ private:
     Parameters parameters;
     Temperament::Ptr temperament;
     VLInstrument instrument;
+    VLModifiers modifiers;
 
     double sampleRate = 44100.0;
     bool active = false;

@@ -26,4 +26,8 @@ Any of the instrument's controllers can be wired to any CC, to velocity, to afte
 
 The factory presets cover single and double reeds on cylindrical and conical pipes, brass, flutes and bowed strings. They are starting points; changing the driver, the resonator or any controller turns a preset into a custom one, which can be saved to a file and loaded into another workspace, since instrument settings live with the workspace rather than with the project.
 
+## Modifiers and effects
+
+After the instrument comes the modifier section, which shapes the tone the way the hardware's does: a *harmonic enhancer* adds upper partials, a *dynamic filter* moves its cutoff with a controller (breath, typically), a five-band *equalizer*, an *impulse expander* which thickens the attack, and a *resonator bank* of tuned combs which acts like a body. Then the effects: chorus and reverb. Each section has an on/off switch and an amount in the editor, and the dynamic filter and the harmonic enhancer can be driven by any controller source like the rest.
+
 A note on the reeds: each one only speaks within a band of pressures, and blowing harder than that chokes it. The presets map velocity and breath into that band, which is why some reeds have a narrower dynamic range than others.

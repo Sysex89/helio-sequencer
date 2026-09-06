@@ -158,6 +158,80 @@ SerializedData VL::Preset::serialize() const noexcept
         data.appendChild(controller);
     }
 
+    SerializedData modifiersData(Wind::modifiers);
+    {
+        const auto &m = this->modifiers;
+
+        SerializedData he(Wind::harmonicEnhancer);
+        he.setProperty(Wind::enabled, m.harmonicEnhancer.enabled);
+        he.setProperty(Wind::drive, m.harmonicEnhancer.drive);
+        he.setProperty(Wind::mix, m.harmonicEnhancer.mix);
+        he.setProperty(Wind::frequency, m.harmonicEnhancer.frequency);
+        modifiersData.appendChild(he);
+
+        SerializedData df(Wind::dynamicFilter);
+        df.setProperty(Wind::enabled, m.dynamicFilter.enabled);
+        df.setProperty(Wind::mode, m.dynamicFilter.mode);
+        df.setProperty(Wind::frequency, m.dynamicFilter.frequency);
+        df.setProperty(Wind::resonance, m.dynamicFilter.resonance);
+        df.setProperty(Wind::depth, m.dynamicFilter.depth);
+        modifiersData.appendChild(df);
+
+        SerializedData eq(Wind::equalizer);
+        eq.setProperty(Wind::enabled, m.equalizer.enabled);
+        for (const auto &band : m.equalizer.bands)
+        {
+            SerializedData bandData(Wind::band);
+            bandData.setProperty(Wind::frequency, band.frequency);
+            bandData.setProperty(Wind::gain, band.gain);
+            bandData.setProperty(Wind::q, band.q);
+            eq.appendChild(bandData);
+        }
+        modifiersData.appendChild(eq);
+
+        SerializedData ie(Wind::impulseExpander);
+        ie.setProperty(Wind::enabled, m.impulseExpander.enabled);
+        ie.setProperty(Wind::mix, m.impulseExpander.mix);
+        ie.setProperty(Wind::size, m.impulseExpander.size);
+        modifiersData.appendChild(ie);
+
+        SerializedData res(Wind::resonatorBank);
+        res.setProperty(Wind::enabled, m.resonatorBank.enabled);
+        res.setProperty(Wind::trackPitch, m.resonatorBank.trackPitch);
+        res.setProperty(Wind::mix, m.resonatorBank.mix);
+        for (const auto &comb : m.resonatorBank.combs)
+        {
+            SerializedData combData(Wind::comb);
+            combData.setProperty(Wind::ratio, comb.ratio);
+            combData.setProperty(Wind::frequency, comb.frequency);
+            combData.setProperty(Wind::gain, comb.gain);
+            combData.setProperty(Wind::decay, comb.decay);
+            res.appendChild(combData);
+        }
+        modifiersData.appendChild(res);
+    }
+    data.appendChild(modifiersData);
+
+    SerializedData effectsData(Wind::effects);
+    {
+        const auto &e = this->effects;
+
+        SerializedData reverb(Wind::reverb);
+        reverb.setProperty(Wind::enabled, e.reverb.enabled);
+        reverb.setProperty(Wind::roomSize, e.reverb.roomSize);
+        reverb.setProperty(Wind::damping, e.reverb.damping);
+        reverb.setProperty(Wind::mix, e.reverb.mix);
+        effectsData.appendChild(reverb);
+
+        SerializedData chorus(Wind::chorus);
+        chorus.setProperty(Wind::enabled, e.chorus.enabled);
+        chorus.setProperty(Wind::rate, e.chorus.rate);
+        chorus.setProperty(Wind::depth, e.chorus.depth);
+        chorus.setProperty(Wind::mix, e.chorus.mix);
+        effectsData.appendChild(chorus);
+    }
+    data.appendChild(effectsData);
+
     return data;
 }
 
@@ -226,11 +300,106 @@ void VL::Preset::deserialize(const SerializedData &data) noexcept
         this->controllers[id].depth = jlimit(-1.f, 1.f, float(child.getProperty(Wind::depth, 1.f)));
         this->controllers[id].base = jlimit(0.f, 1.f, float(child.getProperty(Wind::base, 0.f)));
     }
+
+    const auto readChildFloat = [](const SerializedData &node, const Identifier &key, float defaultValue)
+    {
+        return node.isValid() ? float(node.getProperty(key, defaultValue)) : defaultValue;
+    };
+
+    const auto readChildBool = [](const SerializedData &node, const Identifier &key, bool defaultValue)
+    {
+        return node.isValid() ? bool(node.getProperty(key, defaultValue)) : defaultValue;
+    };
+
+    const auto modifiersData = root.getChildWithName(Wind::modifiers);
+    if (modifiersData.isValid())
+    {
+        auto &m = this->modifiers;
+
+        const auto he = modifiersData.getChildWithName(Wind::harmonicEnhancer);
+        m.harmonicEnhancer.enabled = readChildBool(he, Wind::enabled, m.harmonicEnhancer.enabled);
+        m.harmonicEnhancer.drive = readChildFloat(he, Wind::drive, m.harmonicEnhancer.drive);
+        m.harmonicEnhancer.mix = readChildFloat(he, Wind::mix, m.harmonicEnhancer.mix);
+        m.harmonicEnhancer.frequency = readChildFloat(he, Wind::frequency, m.harmonicEnhancer.frequency);
+
+        const auto df = modifiersData.getChildWithName(Wind::dynamicFilter);
+        m.dynamicFilter.enabled = readChildBool(df, Wind::enabled, m.dynamicFilter.enabled);
+        m.dynamicFilter.mode = df.isValid() ? jlimit(0, 2, int(df.getProperty(Wind::mode, m.dynamicFilter.mode))) : m.dynamicFilter.mode;
+        m.dynamicFilter.frequency = readChildFloat(df, Wind::frequency, m.dynamicFilter.frequency);
+        m.dynamicFilter.resonance = readChildFloat(df, Wind::resonance, m.dynamicFilter.resonance);
+        m.dynamicFilter.depth = readChildFloat(df, Wind::depth, m.dynamicFilter.depth);
+
+        const auto eq = modifiersData.getChildWithName(Wind::equalizer);
+        m.equalizer.enabled = readChildBool(eq, Wind::enabled, m.equalizer.enabled);
+        if (eq.isValid())
+        {
+            int i = 0;
+            forEachChildWithType(eq, bandData, Wind::band)
+            {
+                if (i >= 5) { break; }
+                m.equalizer.bands[i].frequency = readChildFloat(bandData, Wind::frequency, m.equalizer.bands[i].frequency);
+                m.equalizer.bands[i].gain = readChildFloat(bandData, Wind::gain, m.equalizer.bands[i].gain);
+                m.equalizer.bands[i].q = readChildFloat(bandData, Wind::q, m.equalizer.bands[i].q);
+                ++i;
+            }
+        }
+
+        const auto ie = modifiersData.getChildWithName(Wind::impulseExpander);
+        m.impulseExpander.enabled = readChildBool(ie, Wind::enabled, m.impulseExpander.enabled);
+        m.impulseExpander.mix = readChildFloat(ie, Wind::mix, m.impulseExpander.mix);
+        m.impulseExpander.size = readChildFloat(ie, Wind::size, m.impulseExpander.size);
+
+        const auto res = modifiersData.getChildWithName(Wind::resonatorBank);
+        m.resonatorBank.enabled = readChildBool(res, Wind::enabled, m.resonatorBank.enabled);
+        m.resonatorBank.trackPitch = readChildBool(res, Wind::trackPitch, m.resonatorBank.trackPitch);
+        m.resonatorBank.mix = readChildFloat(res, Wind::mix, m.resonatorBank.mix);
+        if (res.isValid())
+        {
+            int i = 0;
+            forEachChildWithType(res, combData, Wind::comb)
+            {
+                if (i >= 5) { break; }
+                m.resonatorBank.combs[i].ratio = readChildFloat(combData, Wind::ratio, m.resonatorBank.combs[i].ratio);
+                m.resonatorBank.combs[i].frequency = readChildFloat(combData, Wind::frequency, m.resonatorBank.combs[i].frequency);
+                m.resonatorBank.combs[i].gain = readChildFloat(combData, Wind::gain, m.resonatorBank.combs[i].gain);
+                m.resonatorBank.combs[i].decay = readChildFloat(combData, Wind::decay, m.resonatorBank.combs[i].decay);
+                ++i;
+            }
+        }
+    }
+
+    const auto effectsData = root.getChildWithName(Wind::effects);
+    if (effectsData.isValid())
+    {
+        auto &e = this->effects;
+
+        const auto reverb = effectsData.getChildWithName(Wind::reverb);
+        e.reverb.enabled = readChildBool(reverb, Wind::enabled, e.reverb.enabled);
+        e.reverb.roomSize = readChildFloat(reverb, Wind::roomSize, e.reverb.roomSize);
+        e.reverb.damping = readChildFloat(reverb, Wind::damping, e.reverb.damping);
+        e.reverb.mix = readChildFloat(reverb, Wind::mix, e.reverb.mix);
+
+        const auto chorus = effectsData.getChildWithName(Wind::chorus);
+        e.chorus.enabled = readChildBool(chorus, Wind::enabled, e.chorus.enabled);
+        e.chorus.rate = readChildFloat(chorus, Wind::rate, e.chorus.rate);
+        e.chorus.depth = readChildFloat(chorus, Wind::depth, e.chorus.depth);
+        e.chorus.mix = readChildFloat(chorus, Wind::mix, e.chorus.mix);
+    }
 }
 
 void VL::Preset::reset() noexcept
 {
     *this = Preset();
+
+    const float combRatios[5] = { 1.f, 1.5f, 2.f, 2.5f, 3.f };
+    const float combFrequencies[5] = { 180.f, 270.f, 360.f, 450.f, 540.f };
+    const float bandFrequencies[5] = { 100.f, 300.f, 1000.f, 3000.f, 8000.f };
+    for (int i = 0; i < 5; ++i)
+    {
+        this->modifiers.resonatorBank.combs[i].ratio = combRatios[i];
+        this->modifiers.resonatorBank.combs[i].frequency = combFrequencies[i];
+        this->modifiers.equalizer.bands[i].frequency = bandFrequencies[i];
+    }
 
     // the default wiring, chosen so a stock Helio project sounds right
     this->withController(ControllerId::Pressure, Source::firstCC + 2, 1.f, 0.f);
@@ -304,6 +473,10 @@ const Array<VL::Preset> &VL::getFactoryPresets()
         chalumeau.maxPressure = 1.3f;
         chalumeau.outputGain = 0.27f;
         chalumeau.withController(ControllerId::BreathNoise, Source::none, 1.f, 0.3f);
+        chalumeau.withController(ControllerId::DynamicFilter, Source::firstCC + 2, 1.f, 0.3f);
+        chalumeau.modifiers.dynamicFilter.enabled = true;
+        chalumeau.modifiers.dynamicFilter.frequency = 800.f;
+        chalumeau.modifiers.dynamicFilter.resonance = 0.2f;
         presets.add(chalumeau);
 
         auto brightReed = make("Bright Reed", DriverType::SingleReed, ResonatorType::CylindricalPipe);
@@ -415,6 +588,9 @@ const Array<VL::Preset> &VL::getFactoryPresets()
         growlHorn.maxPressure = 1.f;
         growlHorn.withController(ControllerId::Growl, Source::firstCC + 1, 1.f, 0.f);
         growlHorn.withController(ControllerId::Vibrato, Source::none, 1.f, 0.f);
+        growlHorn.withController(ControllerId::HarmonicEnhancer, Source::firstCC + 2, 1.f, 0.f);
+        growlHorn.modifiers.harmonicEnhancer.enabled = true;
+        growlHorn.modifiers.harmonicEnhancer.mix = 0.2f;
         presets.add(growlHorn);
 
         // flutes
@@ -472,6 +648,9 @@ const Array<VL::Preset> &VL::getFactoryPresets()
         cello.outputGain = 0.35f;
         cello.withController(ControllerId::BreathNoise, Source::none, 1.f, 0.f);
         cello.withController(ControllerId::Tonguing, Source::none, 0.f, 0.f);
+        cello.modifiers.resonatorBank.enabled = true;
+        cello.modifiers.resonatorBank.trackPitch = false;
+        cello.modifiers.resonatorBank.mix = 0.25f;
         presets.add(cello);
 
         auto violin = make("Violin", DriverType::Bow, ResonatorType::String);
@@ -488,6 +667,13 @@ const Array<VL::Preset> &VL::getFactoryPresets()
         violin.outputGain = 0.35f;
         violin.withController(ControllerId::BreathNoise, Source::none, 1.f, 0.f);
         violin.withController(ControllerId::Tonguing, Source::none, 0.f, 0.f);
+        violin.modifiers.resonatorBank.enabled = true;
+        violin.modifiers.resonatorBank.trackPitch = false;
+        violin.modifiers.resonatorBank.mix = 0.2f;
+        for (int i = 0; i < 5; ++i)
+        {
+            violin.modifiers.resonatorBank.combs[i].frequency = 275.f + 150.f * float(i);
+        }
         presets.add(violin);
 
         auto bowedGlass = make("Bowed Glass", DriverType::Bow, ResonatorType::String);
@@ -503,6 +689,9 @@ const Array<VL::Preset> &VL::getFactoryPresets()
         bowedGlass.outputGain = 0.35f;
         bowedGlass.withController(ControllerId::BreathNoise, Source::none, 1.f, 0.f);
         bowedGlass.withController(ControllerId::Tonguing, Source::none, 0.f, 0.f);
+        bowedGlass.effects.chorus.enabled = true;
+        bowedGlass.effects.chorus.rate = 0.3f;
+        bowedGlass.effects.chorus.mix = 0.4f;
         presets.add(bowedGlass);
 
         // hybrids

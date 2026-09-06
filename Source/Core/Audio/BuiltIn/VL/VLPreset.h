@@ -104,6 +104,86 @@ namespace VL
         float base = 0.f;       // 0..1, the value with no source
     };
 
+    //===------------------------------------------------------------------===//
+    // Modifiers and effects
+    //===------------------------------------------------------------------===//
+
+    struct Modifiers final
+    {
+        // adds upper partials: a band of the signal, driven, mixed back
+        struct HarmonicEnhancer final
+        {
+            bool enabled = false;
+            float drive = 0.5f;         // 0..1
+            float mix = 0.3f;           // 0..1
+            float frequency = 2000.f;   // centre of the band, Hz
+        } harmonicEnhancer;
+
+        // a resonant filter whose cutoff follows its controller
+        struct DynamicFilter final
+        {
+            bool enabled = false;
+            int mode = 0;               // 0 lowpass, 1 bandpass, 2 highpass
+            float frequency = 1200.f;   // the cutoff with the controller at zero, Hz
+            float resonance = 0.3f;     // 0..1
+            float depth = 3.f;          // octaves the controller can add
+        } dynamicFilter;
+
+        // five peaking bands
+        struct Equalizer final
+        {
+            bool enabled = false;
+            struct Band final
+            {
+                float frequency = 1000.f;
+                float gain = 0.f;       // dB
+                float q = 1.f;
+            } bands[5];
+        } equalizer;
+
+        // short diffusion which thickens the attack
+        struct ImpulseExpander final
+        {
+            bool enabled = false;
+            float mix = 0.3f;           // 0..1
+            float size = 0.5f;          // 0..1, scales the diffusion delays
+        } impulseExpander;
+
+        // a bank of tuned combs, like a body or a room
+        struct ResonatorBank final
+        {
+            bool enabled = false;
+            bool trackPitch = true;     // combs relative to the played note, or fixed
+            float mix = 0.3f;           // 0..1
+            struct Comb final
+            {
+                float ratio = 1.f;      // relative to the note when tracking
+                float frequency = 200.f;// Hz when not tracking
+                float gain = 0.5f;      // 0..1
+                float decay = 0.9f;     // 0..0.99, feedback
+            } combs[5];
+        } resonatorBank;
+    };
+
+    struct Effects final
+    {
+        struct Reverb final
+        {
+            bool enabled = false;
+            float roomSize = 0.5f;
+            float damping = 0.5f;
+            float mix = 0.2f;
+        } reverb;
+
+        struct Chorus final
+        {
+            bool enabled = false;
+            float rate = 0.8f;          // Hz
+            float depth = 0.5f;         // 0..1
+            float mix = 0.3f;           // 0..1
+        } chorus;
+    };
+
     struct Preset final : Serializable
     {
         String name;
@@ -168,6 +248,9 @@ namespace VL
         //===--------------------------------------------------------------===//
 
         ControllerSetting controllers[numControllers];
+
+        Modifiers modifiers;
+        Effects effects;
 
         const ControllerSetting &getController(ControllerId id) const noexcept
         {

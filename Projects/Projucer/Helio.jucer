@@ -226,6 +226,10 @@
                     file="../../Source/Core/Audio/BuiltIn/VL/VLInstrument.cpp"/>
               <FILE id="VLsy08" name="VLInstrument.h" compile="0" resource="0"
                     file="../../Source/Core/Audio/BuiltIn/VL/VLInstrument.h"/>
+              <FILE id="VLsy09" name="VLModifiers.cpp" compile="1" resource="0"
+                    file="../../Source/Core/Audio/BuiltIn/VL/VLModifiers.cpp"/>
+              <FILE id="VLsy10" name="VLModifiers.h" compile="0" resource="0"
+                    file="../../Source/Core/Audio/BuiltIn/VL/VLModifiers.h"/>
               <FILE id="VLsy01" name="VLSynth.cpp" compile="1" resource="0"
                     file="../../Source/Core/Audio/BuiltIn/VL/VLSynth.cpp"/>
               <FILE id="VLsy02" name="VLSynth.h" compile="0" resource="0"
