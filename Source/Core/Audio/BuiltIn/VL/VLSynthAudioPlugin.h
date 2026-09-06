@@ -87,6 +87,9 @@ public:
     bool saveUserPreset(const File &file) const;
     bool loadUserPreset(const File &file);
 
+    // a VL70-m voice bulk dump, see VLSysEx.h
+    bool importSysExVoice(const File &file, String &outError);
+
 private:
 
     VLSynth synth;

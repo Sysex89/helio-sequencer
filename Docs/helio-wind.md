@@ -30,4 +30,8 @@ The factory presets cover single and double reeds on cylindrical and conical pip
 
 After the instrument comes the modifier section, which shapes the tone the way the hardware's does: a *harmonic enhancer* adds upper partials, a *dynamic filter* moves its cutoff with a controller (breath, typically), a five-band *equalizer*, an *impulse expander* which thickens the attack, and a *resonator bank* of tuned combs which acts like a body. Then the effects: chorus and reverb. Each section has an on/off switch and an amount in the editor, and the dynamic filter and the harmonic enhancer can be driven by any controller source like the rest.
 
+## VL70-m voice dumps
+
+The load button also accepts a `.syx` file with a Yamaha VL70-m voice bulk dump. The dump's name, breath mode, controller wiring (with the hardware's control numbers translated to Helio's sources), modifier switches and effect sends are applied on top of the current preset, which keeps its driver and resonator, since the hardware's voices carry their instrument implicitly. The layout of the voice data is a transcription which has not been verified against the hardware yet, so a dump from the instrument loads its name and whichever fields line up, while dumps written by Helio round-trip exactly.
+
 A note on the reeds: each one only speaks within a band of pressures, and blowing harder than that chokes it. The presets map velocity and breath into that band, which is why some reeds have a narrower dynamic range than others.

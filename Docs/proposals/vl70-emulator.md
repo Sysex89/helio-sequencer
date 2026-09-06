@@ -1,6 +1,6 @@
 # Design proposal: built-in VL70-m style physical-modelling instrument
 
-*Status: revision 2, phases 1 to 3 implemented in `Source/Core/Audio/BuiltIn/VL/`, phase 4 in progress. This document lives outside the mdBook table of contents on purpose; it is a design note for contributors, not user documentation. Revision 2 addresses a design review: tuning and calibration (6.2), breath mode instead of an auto-breath latch (5.4), corrected build and test facts (7), state and preset scope (5.5, 8), and licensing details (9).*
+*Status: revision 2, all four phases implemented in `Source/Core/Audio/BuiltIn/VL/`. The phase 4 voice-dump layout is a transcription not yet verified against hardware; see `VLSysEx.h`. This document lives outside the mdBook table of contents on purpose; it is a design note for contributors, not user documentation. Revision 2 addresses a design review: tuning and calibration (6.2), breath mode instead of an auto-breath latch (5.4), corrected build and test facts (7), state and preset scope (5.5, 8), and licensing details (9).*
 
 ## 1. Summary
 

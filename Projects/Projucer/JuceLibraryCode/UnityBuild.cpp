@@ -15,6 +15,7 @@
 #include "../../Source/Core/Audio/BuiltIn/VL/VLPreset.cpp"
 #include "../../Source/Core/Audio/BuiltIn/VL/VLInstrument.cpp"
 #include "../../Source/Core/Audio/BuiltIn/VL/VLModifiers.cpp"
+#include "../../Source/Core/Audio/BuiltIn/VL/VLSysEx.cpp"
 #include "../../Source/Core/Audio/BuiltIn/VL/VLSynth.cpp"
 #include "../../Source/Core/Audio/BuiltIn/VL/VLSynthAudioPlugin.cpp"
 #include "../../Source/Core/Audio/Instruments/Instrument.cpp"

@@ -17,6 +17,7 @@
 
 #include "Common.h"
 #include "VLSynthAudioPlugin.h"
+#include "VLSysEx.h"
 #include "BuiltInSynthsPluginFormat.h"
 #include "MobileComboBox.h"
 #include "IconButton.h"
@@ -607,7 +608,7 @@ private:
     void loadPreset()
     {
         this->fileChooser = make<FileChooser>(TRANS(I18n::Dialog::documentLoad),
-            this->getPresetsDirectory(), "*.json", true);
+            this->getPresetsDirectory(), "*.json;*.syx;*.SYX", true);
 
         DocumentHelpers::showFileChooser(this->fileChooser,
             Globals::UI::FileChooser::forFileToOpen,
@@ -622,10 +623,19 @@ private:
                 App::Config().setProperty(Serialization::UI::lastWindPresetsPath,
                     file.getParentDirectory().getFullPathName());
 
-                if (this->audioPlugin->loadUserPreset(file))
+                String error;
+                const bool loaded = file.hasFileExtension("syx") ?
+                    this->audioPlugin->importSysExVoice(file, error) :
+                    this->audioPlugin->loadUserPreset(file);
+
+                if (loaded)
                 {
                     this->syncDataWithAudioPlugin();
                     App::Workspace().autosave();
+                }
+                else
+                {
+                    DBG("Failed to load a Helio Wind preset: " + error);
                 }
             });
     }
@@ -829,6 +839,27 @@ bool VLSynthAudioPlugin::loadUserPreset(const File &file)
     if (preset.name.isEmpty())
     {
         preset.name = file.getFileNameWithoutExtension();
+    }
+
+    this->applySynthParameters(this->synth.getParameters().withPreset(preset));
+    return true;
+}
+
+bool VLSynthAudioPlugin::importSysExVoice(const File &file, String &outError)
+{
+    MemoryBlock data;
+    if (!file.loadFileAsData(data))
+    {
+        outError = "Cannot read the file";
+        return false;
+    }
+
+    // the dump doesn't say which instrument the voice is, so it applies
+    // on top of the current preset, keeping its driver and resonator
+    auto preset = this->synth.getPreset();
+    if (!VL::SysEx::importVoice(data, preset, outError))
+    {
+        return false;
     }
 
     this->applySynthParameters(this->synth.getParameters().withPreset(preset));

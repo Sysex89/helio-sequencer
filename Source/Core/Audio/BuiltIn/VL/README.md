@@ -10,6 +10,12 @@ This folder holds the built-in monophonic wind synth described in
    strings) as digital waveguides
  * `VLSynth`: the mono voice, the controller matrix, the envelopes and LFOs,
    the closed-loop tuner and the output stage
+ * `VLModifiers`: the modifier section (harmonic enhancer, dynamic filter,
+   equalizer, impulse expander, resonator bank) and the effects (chorus,
+   reverb)
+ * `VLSysEx`: VL70-m voice bulk dumps in and out; the framing and checksum
+   are the documented Yamaha ones, the voice layout is a transcription
+   which still needs verifying against hardware
  * `VLSynthAudioPlugin`: the plugin, its state and its editor
 
 All DSP here is written for Helio from the published descriptions of the

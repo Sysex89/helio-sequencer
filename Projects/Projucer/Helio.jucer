@@ -230,6 +230,10 @@
                     file="../../Source/Core/Audio/BuiltIn/VL/VLModifiers.cpp"/>
               <FILE id="VLsy10" name="VLModifiers.h" compile="0" resource="0"
                     file="../../Source/Core/Audio/BuiltIn/VL/VLModifiers.h"/>
+              <FILE id="VLsy11" name="VLSysEx.cpp" compile="1" resource="0"
+                    file="../../Source/Core/Audio/BuiltIn/VL/VLSysEx.cpp"/>
+              <FILE id="VLsy12" name="VLSysEx.h" compile="0" resource="0"
+                    file="../../Source/Core/Audio/BuiltIn/VL/VLSysEx.h"/>
               <FILE id="VLsy01" name="VLSynth.cpp" compile="1" resource="0"
                     file="../../Source/Core/Audio/BuiltIn/VL/VLSynth.cpp"/>
               <FILE id="VLsy02" name="VLSynth.h" compile="0" resource="0"
