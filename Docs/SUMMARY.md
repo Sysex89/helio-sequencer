@@ -5,6 +5,7 @@
 - [Getting Started](getting-started.md)
   - [Microtonal Setup](microtonal-setup.md)
   - [Polymetric Setup](polymetric-setup.md)
+  - [Helio Wind](helio-wind.md)
 ---
 - [Tips and Tricks](tips-and-tricks.md)
   - [Refactoring](refactoring.md)

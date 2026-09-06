@@ -234,6 +234,75 @@ namespace Serialization
             static const Identifier filePath = "filePath";
             static const Identifier programIndex = "programIndex";
         } // namespace SoundFont
+
+        namespace Wind
+        {
+            static const Identifier vlConfig = "vlSynth";
+            static const Identifier version = "version";
+            static const Identifier programIndex = "programIndex";
+
+            static const Identifier preset = "vlPreset";
+            static const Identifier name = "name";
+            static const Identifier driver = "driver";
+            static const Identifier resonator = "resonator";
+            static const Identifier breathMode = "breathMode";
+            static const Identifier reedOffset = "reedOffset";
+            static const Identifier reedSlope = "reedSlope";
+            static const Identifier lipTension = "lipTension";
+            static const Identifier jetRatio = "jetRatio";
+            static const Identifier bowPosition = "bowPosition";
+            static const Identifier bowForce = "bowForce";
+            static const Identifier minPressure = "minPressure";
+            static const Identifier maxPressure = "maxPressure";
+            static const Identifier lossGain = "lossGain";
+            static const Identifier absorption = "absorption";
+            static const Identifier toneHole = "toneHole";
+            static const Identifier toneHolePosition = "toneHolePosition";
+            static const Identifier taper = "taper";
+            static const Identifier stiffness = "stiffness";
+            static const Identifier attack = "attack";
+            static const Identifier release = "release";
+            static const Identifier swellAmount = "swellAmount";
+            static const Identifier swellTime = "swellTime";
+            static const Identifier legatoGlide = "legatoGlide";
+            static const Identifier vibratoRate = "vibratoRate";
+            static const Identifier vibratoDepth = "vibratoDepth";
+            static const Identifier growlRate = "growlRate";
+            static const Identifier outputGain = "outputGain";
+
+            static const Identifier controller = "controller";
+            static const Identifier controllerId = "id";
+            static const Identifier source = "source";
+            static const Identifier depth = "depth";
+            static const Identifier base = "base";
+
+            static const Identifier modifiers = "modifiers";
+            static const Identifier effects = "effects";
+            static const Identifier enabled = "enabled";
+            static const Identifier harmonicEnhancer = "harmonicEnhancer";
+            static const Identifier dynamicFilter = "dynamicFilter";
+            static const Identifier equalizer = "equalizer";
+            static const Identifier impulseExpander = "impulseExpander";
+            static const Identifier resonatorBank = "resonatorBank";
+            static const Identifier reverb = "reverb";
+            static const Identifier chorus = "chorus";
+            static const Identifier drive = "drive";
+            static const Identifier mix = "mix";
+            static const Identifier frequency = "frequency";
+            static const Identifier resonance = "resonance";
+            static const Identifier mode = "mode";
+            static const Identifier gain = "gain";
+            static const Identifier size = "size";
+            static const Identifier decay = "decay";
+            static const Identifier rate = "rate";
+            static const Identifier band = "band";
+            static const Identifier comb = "comb";
+            static const Identifier q = "q";
+            static const Identifier roomSize = "roomSize";
+            static const Identifier damping = "damping";
+            static const Identifier ratio = "ratio";
+            static const Identifier trackPitch = "trackPitch";
+        } // namespace Wind
     } // namespace Audio
 
     namespace Config
@@ -287,6 +356,7 @@ namespace Serialization
 
         static const Identifier lastRenderPath = "lastRenderPath";
         static const Identifier lastSoundFontsPath = "lastSoundFontsPath";
+        static const Identifier lastWindPresetsPath = "lastWindPresetsPath";
 
         namespace Flags
         {

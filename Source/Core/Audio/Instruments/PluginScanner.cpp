@@ -26,6 +26,7 @@
 #include "DefaultSynthAudioPlugin.h"
 #include "MetronomeSynthAudioPlugin.h"
 #include "SoundFontSynthAudioPlugin.h"
+#include "VLSynthAudioPlugin.h"
 #include "SerializablePluginDescription.h"
 
 PluginScanner::PluginScanner() : Thread("Plugin Scanner") {}
@@ -122,6 +123,7 @@ void PluginScanner::runInitialScan()
     this->filesToScan.addIfNotAlreadyThere(DefaultSynthAudioPlugin::instrumentId);
     this->filesToScan.addIfNotAlreadyThere(MetronomeSynthAudioPlugin::instrumentId);
     this->filesToScan.addIfNotAlreadyThere(SoundFontSynthAudioPlugin::instrumentId);
+    this->filesToScan.addIfNotAlreadyThere(VLSynthAudioPlugin::instrumentId);
 
     // known synths to be re-checked first as well:
     for (const auto &it : this->getPlugins())
