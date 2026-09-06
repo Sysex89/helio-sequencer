@@ -1,6 +1,6 @@
 # Design proposal: built-in VL70-m style physical-modelling instrument
 
-*Status: revision 2, phase 1 implemented in `Source/Core/Audio/BuiltIn/VL/`, phases 2 to 4 not started. This document lives outside the mdBook table of contents on purpose; it is a design note for contributors, not user documentation. Revision 2 addresses a design review: tuning and calibration (6.2), breath mode instead of an auto-breath latch (5.4), corrected build and test facts (7), state and preset scope (5.5, 8), and licensing details (9).*
+*Status: revision 2, phases 1 and 2 implemented in `Source/Core/Audio/BuiltIn/VL/`, phases 3 and 4 in progress. This document lives outside the mdBook table of contents on purpose; it is a design note for contributors, not user documentation. Revision 2 addresses a design review: tuning and calibration (6.2), breath mode instead of an auto-breath latch (5.4), corrected build and test facts (7), state and preset scope (5.5, 8), and licensing details (9).*
 
 ## 1. Summary
 

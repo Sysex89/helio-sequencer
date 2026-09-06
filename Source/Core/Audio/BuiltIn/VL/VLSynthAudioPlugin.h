@@ -83,6 +83,10 @@ public:
     void applySynthParameters(const VLSynth::Parameters &params);
     const VLSynth::Parameters &getSynthParameters() const noexcept;
 
+    // user presets are the same JSON as the plugin state's preset node
+    bool saveUserPreset(const File &file) const;
+    bool loadUserPreset(const File &file);
+
 private:
 
     VLSynth synth;

@@ -218,6 +218,14 @@
             <FILE id="DJIQjE" name="SoundFontSynthAudioPlugin.h" compile="0" resource="0"
                   file="../../Source/Core/Audio/BuiltIn/SoundFontSynthAudioPlugin.h"/>
             <GROUP id="{3C1B7E2A-9D4F-4A61-B8E5-7F2D0C9A1E44}" name="VL">
+              <FILE id="VLsy05" name="VLPreset.cpp" compile="1" resource="0"
+                    file="../../Source/Core/Audio/BuiltIn/VL/VLPreset.cpp"/>
+              <FILE id="VLsy06" name="VLPreset.h" compile="0" resource="0"
+                    file="../../Source/Core/Audio/BuiltIn/VL/VLPreset.h"/>
+              <FILE id="VLsy07" name="VLInstrument.cpp" compile="1" resource="0"
+                    file="../../Source/Core/Audio/BuiltIn/VL/VLInstrument.cpp"/>
+              <FILE id="VLsy08" name="VLInstrument.h" compile="0" resource="0"
+                    file="../../Source/Core/Audio/BuiltIn/VL/VLInstrument.h"/>
               <FILE id="VLsy01" name="VLSynth.cpp" compile="1" resource="0"
                     file="../../Source/Core/Audio/BuiltIn/VL/VLSynth.cpp"/>
               <FILE id="VLsy02" name="VLSynth.h" compile="0" resource="0"

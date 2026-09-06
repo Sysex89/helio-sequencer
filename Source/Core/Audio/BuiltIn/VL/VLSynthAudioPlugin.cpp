@@ -72,26 +72,26 @@ public:
         auto programsMenuCurrentItem = [this]()
         {
             return jlimit(0, jmax(0, this->audioPlugin->getNumPrograms() - 1),
-                this->audioPlugin->getSynthParameters().programIndex);
+                this->audioPlugin->getCurrentProgram());
         };
 
         this->programsComboBox->initWith(this->programNameLabel.get(),
             programsMenu, move(programsMenuCurrentItem), true);
 
-        const auto breathMode = this->audioPlugin->getSynthParameters().breathMode;
+        const auto breathMode = this->audioPlugin->getSynthParameters().preset.breathMode;
         this->breathModeLabel->setText(TRANS(I18n::Instruments::vlSynthBreathMode) +
-            ": " + VLSynth::getBreathModeName(breathMode), dontSendNotification);
+            ": " + VL::getBreathModeName(breathMode), dontSendNotification);
 
         MenuPanel::Menu breathModesMenu;
-        for (int i = 0; i < VLSynth::numBreathModes; ++i)
+        for (int i = 0; i < VL::numBreathModes; ++i)
         {
             breathModesMenu.add(MenuItem::item(Icons::empty, CommandIDs::SelectBreathMode + i,
-                VLSynth::getBreathModeName(VLSynth::BreathMode(i))));
+                VL::getBreathModeName(VL::BreathMode(i))));
         }
 
         auto breathModesMenuCurrentItem = [this]()
         {
-            return int(this->audioPlugin->getSynthParameters().breathMode);
+            return int(this->audioPlugin->getSynthParameters().preset.breathMode);
         };
 
         this->breathModesComboBox->initWith(this->breathModeLabel.get(),
@@ -130,7 +130,7 @@ public:
         const int presetIndex = commandId - CommandIDs::SelectPreset;
         if (presetIndex >= 0 && presetIndex < this->audioPlugin->getNumPrograms())
         {
-            const auto newParams = this->audioPlugin->getSynthParameters().withProgramIndex(presetIndex);
+            const auto newParams = this->audioPlugin->getSynthParameters().withProgram(presetIndex);
             this->audioPlugin->applySynthParameters(newParams);
             this->syncDataWithAudioPlugin();
             App::Workspace().autosave();
@@ -138,10 +138,10 @@ public:
         }
 
         const int breathModeIndex = commandId - CommandIDs::SelectBreathMode;
-        if (breathModeIndex >= 0 && breathModeIndex < VLSynth::numBreathModes)
+        if (breathModeIndex >= 0 && breathModeIndex < VL::numBreathModes)
         {
             const auto newParams = this->audioPlugin->getSynthParameters()
-                .withBreathMode(VLSynth::BreathMode(breathModeIndex));
+                .withBreathMode(VL::BreathMode(breathModeIndex));
             this->audioPlugin->applySynthParameters(newParams);
             this->syncDataWithAudioPlugin();
             App::Workspace().autosave();
@@ -225,28 +225,31 @@ AudioProcessorEditor *VLSynthAudioPlugin::createEditor()
 
 int VLSynthAudioPlugin::getNumPrograms()
 {
-    return VLSynth::getFactoryPresets().size();
+    return VL::getFactoryPresets().size();
 }
 
 int VLSynthAudioPlugin::getCurrentProgram()
 {
-    return this->synth.getParameters().programIndex;
+    return jmax(0, this->synth.getParameters().programIndex);
 }
 
 void VLSynthAudioPlugin::setCurrentProgram(int index)
 {
-    this->applySynthParameters(this->synth.getParameters().withProgramIndex(index));
+    this->applySynthParameters(this->synth.getParameters().withProgram(index));
 }
 
 const String VLSynthAudioPlugin::getProgramName(int index)
 {
-    const auto &presets = VLSynth::getFactoryPresets();
+    const auto &presets = VL::getFactoryPresets();
     return presets[jlimit(0, presets.size() - 1, index)].name;
 }
 
 const String VLSynthAudioPlugin::getCurrentProgramName()
 {
-    return this->getProgramName(this->getCurrentProgram());
+    // an edited or a user preset shows its own name
+    const auto &parameters = this->synth.getParameters();
+    return parameters.programIndex < 0 ?
+        parameters.preset.name + " *" : this->getProgramName(parameters.programIndex);
 }
 
 void VLSynthAudioPlugin::changeProgramName(int, const String &) {}
@@ -287,4 +290,28 @@ void VLSynthAudioPlugin::applySynthParameters(const VLSynth::Parameters &newPara
 const VLSynth::Parameters &VLSynthAudioPlugin::getSynthParameters() const noexcept
 {
     return this->synth.getParameters();
+}
+
+bool VLSynthAudioPlugin::saveUserPreset(const File &file) const
+{
+    return this->serializer.saveToFile(file, this->synth.getPreset().serialize()).ok();
+}
+
+bool VLSynthAudioPlugin::loadUserPreset(const File &file)
+{
+    const auto data = this->serializer.loadFromFile(file);
+    if (!data.isValid())
+    {
+        return false;
+    }
+
+    VL::Preset preset;
+    preset.deserialize(data);
+    if (preset.name.isEmpty())
+    {
+        preset.name = file.getFileNameWithoutExtension();
+    }
+
+    this->applySynthParameters(this->synth.getParameters().withPreset(preset));
+    return true;
 }

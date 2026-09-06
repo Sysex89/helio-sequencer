@@ -18,16 +18,16 @@
 #pragma once
 
 #include "Temperament.h"
-#include "Serializable.h"
+#include "VLPreset.h"
+#include "VLInstrument.h"
 
 //===----------------------------------------------------------------------===//
 // A monophonic, breath-controlled physical modelling synth, modelled on the
 // architecture of the Yamaha VL70-m: a non-linear driver excites a waveguide
-// resonator, and a small set of expressive controllers (pressure, vibrato,
-// portamento) is driven by ordinary MIDI CC, which is how Helio's automation
-// tracks reach it. Phase 1 (see Docs/proposals/vl70-emulator.md) implements
-// the single-reed driver with a cylindrical bore, the breath modes,
-// the closed-loop tuner, and the factory presets for that instrument family.
+// resonator, and a set of expressive controllers (pressure, embouchure,
+// tonguing, growl, and so on) is driven by MIDI CC, velocity, aftertouch or
+// the note number, which is how Helio's automation tracks reach it.
+// See Docs/proposals/vl70-emulator.md.
 //
 // The voice is deliberately not built on juce::Synthesiser: the microtonal
 // piano roll spreads one instrument across all 16 MIDI channels, so the synth
@@ -41,79 +41,20 @@ public:
     VLSynth();
 
     //===------------------------------------------------------------------===//
-    // Breath mode: where the driver pressure comes from
-    //===------------------------------------------------------------------===//
-
-    enum class BreathMode : int
-    {
-        Velocity = 0,   // pressure follows note velocity, always sounds
-        TouchEg = 1,    // an envelope started by velocity with a swell
-        BreathCC = 2    // pressure follows CC 2 only, velocity is ignored
-    };
-
-    static constexpr auto numBreathModes = 3;
-    static String getBreathModeName(BreathMode mode);
-
-    //===------------------------------------------------------------------===//
-    // Presets
-    //===------------------------------------------------------------------===//
-
-    struct Preset final
-    {
-        String name;
-
-        // driver (single reed): the reed table is a clipped line,
-        // reed = offset + slope * pressureDifference, clipped to [-1, 1];
-        // a larger offset means a stiffer reed which needs more pressure
-        float reedOffset = 0.7f;
-        float reedSlope = -0.3f;
-
-        // breath noise injected into the mouth pressure, 0..1
-        float noiseGain = 0.2f;
-
-        // resonator: loss per round trip (damping) and the one-pole
-        // reflection filter coefficient (absorption), both 0..1
-        float lossGain = 0.95f;
-        float absorption = 0.4f;
-
-        // how far the mouth pressure is scaled from velocity or breath CC,
-        // the reed only oscillates in a band of pressures, so this maps
-        // 0..1 control to the useful range
-        float minPressure = 0.4f;
-        float maxPressure = 1.0f;
-
-        // vibrato LFO, depth applies at maximum CC 1
-        float vibratoRateHz = 5.5f;
-        float vibratoDepth = 0.15f;
-
-        // pressure envelope, seconds
-        float attackSeconds = 0.03f;
-        float releaseSeconds = 0.08f;
-
-        // touch EG breath mode: swell above the velocity level
-        float swellAmount = 0.2f;
-        float swellSeconds = 0.5f;
-
-        // legato glide when no portamento is requested, seconds
-        float legatoGlideSeconds = 0.015f;
-
-        // output trim, calibrated to sit next to the default synth
-        float outputGain = 0.25f;
-    };
-
-    static const Array<Preset> &getFactoryPresets();
-
-    //===------------------------------------------------------------------===//
-    // Synth parameters
+    // Synth parameters: the preset in use, and which factory program it
+    // came from, -1 for a user preset or an edited one
     //===------------------------------------------------------------------===//
 
     struct Parameters final : Serializable
     {
         int programIndex = 0;
-        BreathMode breathMode = BreathMode::Velocity;
+        VL::Preset preset;
 
-        Parameters withProgramIndex(int newProgramIndex) const noexcept;
-        Parameters withBreathMode(BreathMode newBreathMode) const noexcept;
+        Parameters();
+
+        Parameters withProgram(int newProgramIndex) const noexcept;
+        Parameters withPreset(const VL::Preset &newPreset) const noexcept;
+        Parameters withBreathMode(VL::BreathMode newBreathMode) const noexcept;
 
         SerializedData serialize() const noexcept override;
         void deserialize(const SerializedData &data) noexcept override;
@@ -121,13 +62,13 @@ public:
 
         friend bool operator==(const Parameters &l, const Parameters &r) noexcept
         {
-            return l.programIndex == r.programIndex && l.breathMode == r.breathMode;
+            return l.programIndex == r.programIndex && l.preset == r.preset;
         }
     };
 
     void applyParameters(const Parameters &parameters);
     const Parameters &getParameters() const noexcept;
-    const Preset &getCurrentPreset() const noexcept;
+    const VL::Preset &getPreset() const noexcept;
 
     //===------------------------------------------------------------------===//
     // Playback
@@ -154,10 +95,9 @@ public:
     // the loop length correction found by the tuner, in samples
     double getTunerCorrection() const noexcept;
 
-    // some hints for the tests and the editor
-    static constexpr auto breathController = 2;
-    static constexpr auto expressionController = 11;
-    static constexpr auto modulationController = 1;
+    // the current value of a controller, 0..1, for the editor
+    float getControllerValue(VL::ControllerId id) const noexcept;
+
     static constexpr auto portamentoTimeController = 5;
     static constexpr auto portamentoSwitchController = 65;
 
@@ -173,12 +113,12 @@ private:
     void updateControlRate();
     void updateCoefficients();
     void updateTargetFrequency();
+    void updateTuner();
     void startGlide(double toFrequency, double seconds);
     void resetResonator();
 
-    double computeLoopLengthFor(double frequency) const noexcept;
-    float readDelayed(double delayInSamples) const noexcept;
-    void updateTuner();
+    float evaluateController(VL::ControllerId id) const noexcept;
+    float throatFormant(float input) noexcept;
 
     //===------------------------------------------------------------------===//
     // Voice state
@@ -194,8 +134,8 @@ private:
     Array<HeldNote> heldNotes; // the last one is the sounding note
 
     Parameters parameters;
-    Preset preset;
     Temperament::Ptr temperament;
+    VLInstrument instrument;
 
     double sampleRate = 44100.0;
     bool active = false;
@@ -212,10 +152,15 @@ private:
     double loopLengthIncrement = 0.0;
     double loopLengthTarget = 8.0;
 
-    // closed-loop tuner: finds the period the bore is actually oscillating
-    // at from the correlation of the bore signal with itself around the
-    // target period, and nudges the loop length to correct the phase
-    // added by the reed junction; see updateTuner()
+    // closed-loop tuner: finds the period the instrument is actually
+    // oscillating at from the correlation of the output with itself
+    // around the target period, and nudges the loop length to correct
+    // the phase added by the driver; see updateTuner()
+    static constexpr auto historyLength = 8192;
+    float history[historyLength] = {};
+    int historyWriteIndex = 0;
+    float readHistory(double delay) const noexcept;
+
     double tunerCorrection = 0.0;
     double tunerTargetPeriod = 0.0;
     float tunerCorrelations[3] = {};
@@ -223,10 +168,9 @@ private:
     int samplesSinceAttack = 0;
     int samplesSinceTunerUpdate = 0;
 
-    // controllers
-    float breathCC = 0.f;
-    float expressionCC = 1.f;
-    float modulationCC = 0.f;
+    // controller sources: CCs, velocity, aftertouch, note number
+    float sourceValues[VL::Source::count] = {};
+    float controllerValues[VL::numControllers] = {};
     float portamentoTimeCC = 0.f;
     bool portamentoOn = false;
 
@@ -241,29 +185,41 @@ private:
     float noteVelocity = 0.f;
     bool attackReached = false;
 
-    // vibrato
+    // tonguing: a short dip in the driver at note-on
+    float tongue = 1.f;
+    float tongueCoefficient = 0.f;
+
+    // vibrato and growl LFOs
     float vibratoPhase = 0.f;
     float vibratoIncrement = 0.f;
     float vibratoSample = 0.f;
+    float growlPhase = 0.f;
+    float growlIncrement = 0.f;
 
-    // resonator
-    // the tuner looks a full period back, so this holds two loops
-    static constexpr auto maxLoopLength = 8192;
-    static constexpr auto interpolationOrder = 4;
-    float delayLine[maxLoopLength] = {};
-    int writeIndex = 0;
-    float reflectionState = 0.f;
-    float reflectionCoefficient = 0.f; // preset absorption, normalized to the sample rate
-    float dcBlockerCoefficient = 0.995f;
-    float dcBlockerX = 0.f;
-    float dcBlockerY = 0.f;
+    // throat formant: a resonance on the breath
+    float formantB0 = 0.f;
+    float formantA1 = 0.f;
+    float formantA2 = 0.f;
+    float formantX1 = 0.f;
+    float formantX2 = 0.f;
+    float formantY1 = 0.f;
+    float formantY2 = 0.f;
+    float formantMix = 0.f;
 
     // control rate
     static constexpr auto controlRateSamples = 32;
     int controlRateCounter = 0;
 
+    VLInstrument::Controls controls;
+
     float lastOutput = 0.f;
     float outputEnvelope = 0.f;
+    float amplitude = 1.f;
+
+    // the loops need their DC to work, the output doesn't
+    float dcBlockCoefficient = 0.995f;
+    float dcX1 = 0.f;
+    float dcY1 = 0.f;
 
     Random noise;
 
