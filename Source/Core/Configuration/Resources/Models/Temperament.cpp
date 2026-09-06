@@ -20,14 +20,15 @@
 #include "SerializationKeys.h"
 
 Temperament::Temperament(const Temperament &other) noexcept :
-    id(other.id), name(other.name),
-    period(other.period), keysTotal(other.keysTotal),
+    id(other.id), name(other.name), period(other.period),
+    periodRange(other.periodRange), keysTotal(other.keysTotal),
     middleC(other.middleC), middleA(other.middleA),
     highlighting(other.highlighting), chromaticMap(other.chromaticMap),
     chromaticScales(other.chromaticScales) {}
 
 Temperament::Temperament(Temperament &&other) noexcept :
-    id(other.id), name(other.name), keysTotal(other.keysTotal),
+    id(other.id), name(other.name),
+    periodRange(other.periodRange), keysTotal(other.keysTotal),
     middleC(other.middleC), middleA(other.middleA),
     highlighting(other.highlighting), chromaticMap(other.chromaticMap),
     chromaticScales(other.chromaticScales)
@@ -290,7 +291,27 @@ void Temperament::deserialize(const SerializedData &data) noexcept
 
     this->keysTotal = int(Globals::numPeriodsInKeyboard * float(this->getPeriodSize()));
     this->middleC = Temperament::periodNumForMiddleC * this->getPeriodSize();
-    this->middleA = this->middleC + this->getEquivalentOfTwelveToneInterval(Semitones::MajorSixth);
+    this->middleA = this->middleC + this->getEquivalentOfMajorSixth();
+}
+
+Note::Key Temperament::getEquivalentOfMajorSixth() const noexcept
+{
+    // the built-in instruments are tuned relative to middle A at 440 Hz,
+    // which is the equivalent of the 12-tone major sixth above middle C;
+    // in octave-based temperaments the chromatic map gives that equivalent,
+    // but in non-octave temperaments, e.g. Bohlen-Pierce, the chromatic map
+    // stretches the 12-tone octave over the entire period, so it can't be used
+    // to locate A440 (in Bohlen-Pierce it would point at ~1460 cents above
+    // middle C, making everything sound way lower than in other temperaments),
+    // so instead just pick the key closest to 900 cents above middle C:
+    if (approximatelyEqual(this->periodRange, 2.0))
+    {
+        return this->getEquivalentOfTwelveToneInterval(Semitones::MajorSixth);
+    }
+
+    const auto keyStepInCents = 1200.0 * std::log2(this->periodRange) / double(this->getPeriodSize());
+    const auto majorSixthInCents = 100.0 * double(int(Semitones::MajorSixth));
+    return Note::Key(roundToInt(majorSixthInCents / keyStepInCents));
 }
 
 void Temperament::reset() noexcept
@@ -308,7 +329,9 @@ Temperament &Temperament::operator=(const Temperament &other)
     this->id = other.id;
     this->name = other.name;
     this->period = other.period;
+    this->periodRange = other.periodRange;
     this->middleC = other.middleC;
+    this->middleA = other.middleA;
     this->keysTotal = other.keysTotal;
     this->highlighting = other.highlighting;
     this->chromaticMap = other.chromaticMap;
@@ -408,9 +431,113 @@ public:
             expect(makeScaleString("Bx", p) == "Bx C# Cx D D# Dx E E# F F# Fx G G# Gx A A# Ax B B#");
             // hopefully the rest is ok too, too lazy to write them all
         }
+
+        beginTest("Bohlen-Pierce chromatic scales");
+
+        {
+            const auto p = makePeriod("C C#/Db D E F F#/Gb G H H#/Jb J A A#/Bb B");
+            expect(makeScaleString("C", p) == "C C# D E F F# G H H# J A A# B");
+            expect(makeScaleString("Db", p) == "Db D E F Gb G H Jb J A Bb B C");
+            expect(makeScaleString("H#", p) == "H# J A A# B C C# D E F F# G H");
+            expect(makeScaleString("Jb", p) == "Jb J A Bb B C Db D E F Gb G H");
+        }
     }
 };
 
 static NoteNamingTests noteNamingTests;
+
+class TemperamentTuningTests final : public UnitTest
+{
+public:
+
+    TemperamentTuningTests() :
+        UnitTest("Temperament tuning tests", UnitTestCategories::helio) {}
+
+    static Temperament::Ptr makeTemperament(const String &id, const String &period,
+        double periodRange, const String &highlighting, const String &chromaticMap)
+    {
+        using namespace Serialization;
+        SerializedData data(Midi::temperament);
+        data.setProperty(Midi::temperamentId, id);
+        data.setProperty(Midi::temperamentName, id);
+        data.setProperty(Midi::temperamentPeriod, period);
+        data.setProperty(Midi::temperamentPeriodRange, periodRange);
+        data.setProperty(Midi::temperamentHighlighting, highlighting);
+        data.setProperty(Midi::temperamentChromaticMap, chromaticMap);
+
+        Temperament::Ptr temperament(new Temperament());
+        temperament->deserialize(data);
+        return temperament;
+    }
+
+    void runTest() override
+    {
+        beginTest("12-edo tuning");
+
+        {
+            const auto t = Temperament::makeTwelveToneEqualTemperament();
+            const auto middleC = t->getMiddleC();
+            expectEquals(t->getPeriodRange(), 2.0);
+            expectWithinAbsoluteError(t->getNoteInHertz(middleC), 261.6256, 0.001);
+            expectWithinAbsoluteError(t->getNoteInHertz(middleC + 9), 440.0, 0.001);
+            expectWithinAbsoluteError(t->getNoteInHertz(middleC + 12), 523.2511, 0.001);
+        }
+
+        beginTest("19-edo tuning");
+
+        {
+            const auto t = makeTemperament("19edo",
+                "C/Bx C#/Dbb Db/Cx D D#/Ebb Eb/Dx E/Fbb E#/Fb F/Ex F#/Gbb Gb/Fx G G#/Abb Ab/Gx A A#/Bbb Bb/Ax B/Cbb B#/Cb",
+                2.0, "2 1 2 1 2 2 1 2 1 2 2 1", "2 1 2 1 2 2 1 2 1 2 2 1");
+
+            const auto middleC = t->getMiddleC();
+            expectEquals(t->getPeriodSize(), 19);
+            // in octave-based temperaments, the A key is found using the chromatic map:
+            expectEquals(int(t->getEquivalentOfTwelveToneInterval(Semitones::MajorSixth)), 14);
+            expectWithinAbsoluteError(t->getNoteInHertz(middleC + 14), 440.0, 0.001);
+            expectWithinAbsoluteError(t->getNoteInHertz(middleC + 19), t->getNoteInHertz(middleC) * 2.0, 0.001);
+        }
+
+        beginTest("Bohlen-Pierce tuning");
+
+        {
+            const auto t = makeTemperament("13edt",
+                "C C#/Db D E F F#/Gb G H H#/Jb J A A#/Bb B",
+                3.0, "2 1 1 2 1 2 1 2 1", "1 1 1 1 1 2 1 1 1 1 1 1");
+
+            const auto middleC = t->getMiddleC();
+            expectEquals(t->getPeriodSize(), 13);
+            expectEquals(t->getPeriodRange(), 3.0);
+            expectEquals(t->getNumKeys(), 138);
+            expectEquals(int(middleC), 65);
+
+            // the period is a tritave:
+            expectWithinAbsoluteError(t->getNoteInHertz(middleC + 13), t->getNoteInHertz(middleC) * 3.0, 0.001);
+
+            // the chromatic map stretches the 12-tone octave over the tritave:
+            expectEquals(int(t->getEquivalentOfTwelveToneInterval(Semitones::PerfectOctave)), 13);
+            expectEquals(int(t->getEquivalentOfTwelveToneInterval(Semitones::PerfectFifth)), 8);
+            expectEquals(int(t->getEquivalentOfTwelveToneInterval(Semitones::PerfectFourth)), 5);
+
+            // the key closest to a major sixth above middle C, i.e. the 6th step
+            // (~878 cents), is tuned to 440 Hz, so that middle C stays close
+            // to its 12-tone pitch instead of dropping by half an octave:
+            expectWithinAbsoluteError(t->getNoteInHertz(middleC + 6), 440.0, 0.001);
+            expectWithinAbsoluteError(t->getNoteInHertz(middleC), 265.0, 0.01);
+
+            // copies must keep the tuning:
+            const Temperament copy(*t);
+            expectEquals(copy.getPeriodRange(), 3.0);
+            expectWithinAbsoluteError(copy.getNoteInHertz(middleC + 6), 440.0, 0.001);
+
+            Temperament assigned;
+            assigned = *t;
+            expectEquals(assigned.getPeriodRange(), 3.0);
+            expectWithinAbsoluteError(assigned.getNoteInHertz(middleC + 6), 440.0, 0.001);
+        }
+    }
+};
+
+static TemperamentTuningTests temperamentTuningTests;
 
 #endif
